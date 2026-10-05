@@ -14,7 +14,7 @@ void setup()
 void loop()
 {
     myEnc.updateFilteredVelocity();
-    
+
     static unsigned long startTime = millis();
     unsigned long currentTime = millis();
     unsigned long elapsed = currentTime - startTime;

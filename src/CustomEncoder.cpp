@@ -100,7 +100,7 @@ void CustomEncoder::updateVelocity()
     uint32_t elapsedTime = currentTime_us - _lastTimeForVelocity_us;
     if (elapsedTime > 0)
     {
-        _velocity = (_position - _lastPositionForVelocity) / (float(elapsedTime) / 1000000.0);
+        _velocity = (_position - _lastPositionForVelocity) / (float(elapsedTime) / 1000000.0) / _resolution;
         _lastPositionForVelocity = _position;
         _lastTimeForVelocity_us = currentTime_us;
     }
