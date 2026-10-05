@@ -13,6 +13,8 @@ void setup()
 
 void loop()
 {
+    myEnc.updateFilteredVelocity();
+    
     static unsigned long startTime = millis();
     unsigned long currentTime = millis();
     unsigned long elapsed = currentTime - startTime;
@@ -21,12 +23,11 @@ void loop()
     Serial.print("\t");
     Serial.print(myEnc.getPosition());
     Serial.print("\t");
-    Serial.println(myEnc.getVelocityRaw());
+    Serial.println(myEnc.getVelocity());
 
     if (elapsed >= 1000)
     {
         startTime = currentTime;
     }
     delay(10);
-    myEnc.updateFilteredVelocity();
 }
