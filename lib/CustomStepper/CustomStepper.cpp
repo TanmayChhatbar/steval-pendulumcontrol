@@ -101,15 +101,15 @@ void CustomStepper::begin()
     SPI.begin();
 
     // Match the vendored L6474 configuration: 1/16 step, 250 mA TVAL,
-    // 750 mA overcurrent threshold and the shield's default timing values.
+    // 3 A overcurrent threshold and the shield's default timing values.
     writeRegister(L6474_ABS_POS_REG, 0, 3);
     writeRegister(0x02, 0, 2);                // EL_POS
     writeRegister(0x03, 0, 3);                // MARK
-    writeRegister(L6474_TVAL_REG, 7, 1);      // 250 mA as encoded by the source library
+    writeRegister(L6474_TVAL_REG, 32, 1);     // TODO?? mA as encoded by the source library
     writeRegister(L6474_T_FAST_REG, 0x34, 1); // 8 us fast decay, 12 us step
     writeRegister(L6474_TON_MIN_REG, 5, 1);
     writeRegister(L6474_TOFF_MIN_REG, 41, 1);
-    writeRegister(L6474_OCD_TH_REG, 1, 1);       // 750 mA
+    writeRegister(L6474_OCD_TH_REG, 0x07, 1);    // 3 A
     writeRegister(L6474_STEP_MODE_REG, 0x8C, 1); // 1/16 step, 1/2 sync
     writeRegister(L6474_ALARM_EN_REG, 0xCF, 1);
     writeRegister(L6474_CONFIG_REG, 0x2C80, 2);
@@ -134,6 +134,23 @@ void CustomStepper::setVelocitySetPoint(float velocity)
     }
     taskENTER_CRITICAL();
     _velocitySetpointFromUser = velocity;
+    taskEXIT_CRITICAL();
+}
+
+inline uint8_t Tval_Current_to_Par(float Tval)
+{
+    return ((uint8_t)(((Tval - 31.25) / 31.25) + 0.5));
+}
+void CustomStepper::setCurrentLimit(float currentLimit)
+{
+
+    //TODO does not seem to work with serial
+    currentLimit = constrain(currentLimit, 31.25f, 4000.0f);
+    uint8_t value = static_cast<uint8_t>(
+        ((currentLimit - 31.25f) / 31.25f) + 0.5f);
+
+    taskENTER_CRITICAL();
+    writeRegister(L6474_TVAL_REG, value, 1);
     taskEXIT_CRITICAL();
 }
 

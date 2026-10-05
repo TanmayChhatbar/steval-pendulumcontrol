@@ -8,6 +8,7 @@ public:
     void setVelocitySetPoint(float velocity);
     void begin();
     void setAcceleration(float accMax);
+    void setCurrentLimit(float currentLimit);
 
 private:
     static void controlTask(void *arg);

@@ -14,41 +14,30 @@ void setup()
     myStepper.begin();
     Serial.println(myStepper.getPosition());
     delay(1000);
-    myStepper.setAcceleration(8000.0f);
+    myStepper.setAcceleration(10000.0f);
     vTaskStartScheduler();
 }
 
 void loop()
 {
-    static uint mode = 0;
-    static unsigned long last_time = millis();
-    static unsigned long delayTime = 500;
-    if (millis() - last_time >= delayTime)
+    static unsigned long last_vel_cmd_time = millis();
+    if (Serial.available())
     {
-        switch (mode)
+        char s = Serial.read();
+        if (s == 's')
         {
-        case 0:
-            myStepper.setVelocitySetPoint(180.0f);
-            delayTime = 1000;
-            break;
-        case 1:
-            myStepper.setVelocitySetPoint(0.0f);
-            delayTime = 500;
-            break;
-        case 2:
-            myStepper.setVelocitySetPoint(0.0f);
-            delayTime = 200;
-            break;
-        case 3:
-            myStepper.setVelocitySetPoint(0.0f);
-            delayTime = 500;
-            break;
+            myStepper.setVelocitySetPoint(Serial.parseFloat());
+            last_vel_cmd_time = millis();
         }
-        Serial.println(mode);
-        mode++;
-        mode %= 4;
 
-        last_time = millis();
+        else if (s == 'c')
+        {
+            myStepper.setCurrentLimit(Serial.parseFloat());
+        }
+    }
+    if (millis() - last_vel_cmd_time > 200)
+    {
+        myStepper.setVelocitySetPoint(0.0f);
     }
 
     myEnc.updateFilteredVelocity();
@@ -57,12 +46,8 @@ void loop()
     unsigned long currentTime = millis();
     unsigned long elapsed = currentTime - startTime;
 
-    Serial.print(elapsed);
-    Serial.print("\t");
     Serial.print(myEnc.getPosition());
-    Serial.print("\t");
-    Serial.print(myStepper.getPosition());
-    Serial.print("\t");
+    Serial.print(",");
     Serial.println(myEnc.getVelocity());
 
     if (elapsed >= 1000)
