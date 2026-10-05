@@ -1,0 +1,86 @@
+#include "CustomEncoder.h"
+
+CustomEncoder::CustomEncoder(uint8_t pinA, uint8_t pinB, uint32_t ticksPerRotation)
+{
+    _pinA = pinA;
+    _pinB = pinB;
+    _resolution = float(ticksPerRotation) / 360.0;
+}
+
+void CustomEncoder::begin()
+{
+    pinMode(_pinA, INPUT_PULLUP);
+    pinMode(_pinB, INPUT_PULLUP);
+
+    _lastA = digitalRead(_pinA);
+    _lastB = digitalRead(_pinB);
+    _position = 0;
+
+    static CustomEncoder *instance = this;
+
+    attachInterrupt(
+        digitalPinToInterrupt(_pinA),
+        (voidFuncPtr)[]() {
+            instance->update();
+        },
+        CHANGE);
+}
+
+float CustomEncoder::getPosition() const
+{
+    // return in degrees
+    return float(_position) / _resolution;
+}
+
+float CustomEncoder::getVelocityRaw() const
+{
+    // return in degrees per second
+    return _velocity / _resolution;
+}
+
+float CustomEncoder::getVelocity() const
+{
+    // return in degrees per second
+    return _filteredVelocity / _resolution;
+}
+
+void CustomEncoder::updateFilteredVelocity()
+{
+    // low-pass filter
+    float alpha = LPF;
+    _filteredVelocity = alpha * _velocity + (1 - alpha) * _filteredVelocity;
+}
+
+void CustomEncoder::update()
+{
+    // read
+    bool currentA = digitalRead(_pinA);
+    bool currentB = digitalRead(_pinB);
+
+    // history
+    _lastPosition = _position;
+
+    // track
+    if (currentA != _lastA || currentB != _lastB)
+    {
+        if ((currentA ^ _lastB) == 1)
+        {
+            _position++; // cw
+        }
+        else
+        {
+            _position--; // ccw
+        }
+        _lastA = currentA;
+        _lastB = currentB;
+    }
+
+    // velocity
+    uint32_t currentTime_us = micros();
+    uint32_t elapsedTime = currentTime_us - _lastTime_us;
+    if (elapsedTime > 0)
+    {
+        _velocity = (_position - _lastPosition) / (float(elapsedTime) / 1000000.0);
+    }
+    _lastTime_us = currentTime_us;
+}
