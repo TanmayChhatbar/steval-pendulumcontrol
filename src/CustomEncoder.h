@@ -17,6 +17,7 @@ public:
     void begin();
 
 private:
+    static void velocityTask(void *arg);
     void update();
     void updateVelocity();
 

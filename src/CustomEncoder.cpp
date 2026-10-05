@@ -1,4 +1,5 @@
 #include "CustomEncoder.h"
+#include <STM32FreeRTOS.h>
 
 CustomEncoder::CustomEncoder(uint8_t pinA, uint8_t pinB, uint32_t ticksPerRotation)
 {
@@ -18,8 +19,26 @@ void CustomEncoder::begin()
 
     static CustomEncoder *instance = this;
 
-    attachInterrupt(digitalPinToInterrupt(_pinA), (voidFuncPtr)[]() {instance->update();}, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(_pinB), (voidFuncPtr)[]() {instance->update();}, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(_pinA), (voidFuncPtr)[]() { instance->update(); }, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(_pinB), (voidFuncPtr)[]() { instance->update(); }, CHANGE);
+
+    xTaskCreate(velocityTask, "encoder velocity", 256, this, 2, nullptr);
+}
+
+void CustomEncoder::velocityTask(void *arg)
+{
+    auto *encoder = static_cast<CustomEncoder *>(arg);
+    TickType_t lastWake = xTaskGetTickCount();
+    const TickType_t period = pdMS_TO_TICKS(250);
+
+    for (;;)
+    {
+        if (micros() - encoder->_lastTimeForVelocity_us > 25000)
+        {
+            encoder->updateVelocity();
+        }
+        vTaskDelayUntil(&lastWake, period);
+    }
 }
 
 float CustomEncoder::getPosition() const

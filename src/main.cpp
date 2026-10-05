@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "CustomEncoder.h"
+#include <STM32FreeRTOS.h>
 
 CustomEncoder myEnc(D5, D4, 600U);
 
@@ -7,6 +8,7 @@ void setup()
 {
     Serial.begin(230400);
     myEnc.begin();
+    vTaskStartScheduler();
 }
 
 void loop()
