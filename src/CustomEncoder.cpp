@@ -4,7 +4,7 @@ CustomEncoder::CustomEncoder(uint8_t pinA, uint8_t pinB, uint32_t ticksPerRotati
 {
     _pinA = pinA;
     _pinB = pinB;
-    _resolution = float(ticksPerRotation) / 360.0;
+    _resolution = float(ticksPerRotation) / 360.0 * 4.0;
 }
 
 void CustomEncoder::begin()
@@ -18,12 +18,8 @@ void CustomEncoder::begin()
 
     static CustomEncoder *instance = this;
 
-    attachInterrupt(
-        digitalPinToInterrupt(_pinA),
-        (voidFuncPtr)[]() {
-            instance->update();
-        },
-        CHANGE);
+    attachInterrupt(digitalPinToInterrupt(_pinA), (voidFuncPtr)[]() {instance->update();}, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(_pinB), (voidFuncPtr)[]() {instance->update();}, CHANGE);
 }
 
 float CustomEncoder::getPosition() const
@@ -76,11 +72,17 @@ void CustomEncoder::update()
     }
 
     // velocity
+    updateVelocity();
+}
+
+void CustomEncoder::updateVelocity()
+{
     uint32_t currentTime_us = micros();
-    uint32_t elapsedTime = currentTime_us - _lastTime_us;
+    uint32_t elapsedTime = currentTime_us - _lastTimeForVelocity_us;
     if (elapsedTime > 0)
     {
-        _velocity = (_position - _lastPosition) / (float(elapsedTime) / 1000000.0);
+        _velocity = (_position - _lastPositionForVelocity) / (float(elapsedTime) / 1000000.0);
+        _lastPositionForVelocity = _position;
+        _lastTimeForVelocity_us = currentTime_us;
     }
-    _lastTime_us = currentTime_us;
 }

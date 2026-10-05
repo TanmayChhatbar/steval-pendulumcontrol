@@ -14,12 +14,16 @@ public:
     float getVelocityRaw() const;
     float getVelocity() const;
     void updateFilteredVelocity();
-    void update();
     void begin();
 
 private:
+    void update();
+    void updateVelocity();
+
     uint8_t _pinA, _pinB;
     int32_t _lastPosition = 0;
+    int32_t _lastPositionForVelocity = 0;
+    uint32_t _lastTimeForVelocity_us = 0;
     int32_t _position = 0;
     bool _lastA;
     bool _lastB;
