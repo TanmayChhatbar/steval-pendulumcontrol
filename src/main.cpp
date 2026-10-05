@@ -26,6 +26,5 @@ void loop()
         startTime = currentTime;
     }
     delay(10);
-    // myEnc.update();
     myEnc.updateFilteredVelocity();
 }
