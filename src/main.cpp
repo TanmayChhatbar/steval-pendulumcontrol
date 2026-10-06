@@ -14,45 +14,43 @@ void setup()
     myStepper.begin();
     Serial.println(myStepper.getPosition());
     delay(1000);
-    myStepper.setAcceleration(10000.0f);
+    myStepper.setAcceleration(5000.0f);
     vTaskStartScheduler();
 }
 
 void loop()
 {
     static unsigned long last_vel_cmd_time = millis();
-    if (Serial.available())
+    while (Serial.available())
     {
         char s = Serial.read();
         if (s == 's')
         {
-            myStepper.setVelocitySetPoint(Serial.parseFloat());
+            float vsp = Serial.parseFloat();
+            myStepper.setVelocitySetPoint(vsp);
             last_vel_cmd_time = millis();
         }
 
         else if (s == 'c')
         {
-            myStepper.setCurrentLimit(Serial.parseFloat());
+            float currentLimit = Serial.parseFloat();
+            Serial.println(currentLimit);
+            myStepper.setCurrentLimit(currentLimit);
         }
     }
+
     if (millis() - last_vel_cmd_time > 200)
     {
+        // if no command received, zero velocity
         myStepper.setVelocitySetPoint(0.0f);
     }
 
     myEnc.updateFilteredVelocity();
 
-    static unsigned long startTime = millis();
-    unsigned long currentTime = millis();
-    unsigned long elapsed = currentTime - startTime;
-
     Serial.print(myEnc.getPosition());
     Serial.print(",");
-    Serial.println(myEnc.getVelocity());
-
-    if (elapsed >= 1000)
-    {
-        startTime = currentTime;
-    }
+    Serial.print(myEnc.getVelocity());
+    Serial.print(",");
+    Serial.println(myStepper.getPosition());
     delay(10);
 }

@@ -105,11 +105,11 @@ void CustomStepper::begin()
     writeRegister(L6474_ABS_POS_REG, 0, 3);
     writeRegister(0x02, 0, 2);                // EL_POS
     writeRegister(0x03, 0, 3);                // MARK
-    writeRegister(L6474_TVAL_REG, 32, 1);     // TODO?? mA as encoded by the source library
+    writeRegister(L6474_TVAL_REG, 7, 1);     // 250 mA as encoded by the source library
     writeRegister(L6474_T_FAST_REG, 0x34, 1); // 8 us fast decay, 12 us step
     writeRegister(L6474_TON_MIN_REG, 5, 1);
     writeRegister(L6474_TOFF_MIN_REG, 41, 1);
-    writeRegister(L6474_OCD_TH_REG, 0x07, 1);    // 3 A
+    writeRegister(L6474_OCD_TH_REG, 0x0F, 1);    // 6 A
     writeRegister(L6474_STEP_MODE_REG, 0x8C, 1); // 1/16 step, 1/2 sync
     writeRegister(L6474_ALARM_EN_REG, 0xCF, 1);
     writeRegister(L6474_CONFIG_REG, 0x2C80, 2);
