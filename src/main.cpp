@@ -37,6 +37,12 @@ void loop()
             Serial.println(currentLimit);
             myStepper.setCurrentLimit(currentLimit);
         }
+
+        else if (s == 'r')
+        {
+            myStepper.resetPosition();
+            myEnc.resetPosition();
+        }
     }
 
     if (millis() - last_vel_cmd_time > 200)
