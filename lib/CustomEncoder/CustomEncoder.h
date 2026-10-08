@@ -15,6 +15,7 @@ public:
     float getVelocity() const;
     void updateFilteredVelocity();
     void begin();
+    void resetPosition();
 
 private:
     static void velocityTask(void *arg);

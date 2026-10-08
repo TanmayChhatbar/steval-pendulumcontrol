@@ -105,3 +105,13 @@ void CustomEncoder::updateVelocity()
         _lastTimeForVelocity_us = currentTime_us;
     }
 }
+
+void CustomEncoder::resetPosition()
+{
+    _position = 0;
+    _lastPosition = 0;
+    _lastPositionForVelocity = 0;
+    _lastTimeForVelocity_us = 0;
+    _velocity = 0.0;
+    _filteredVelocity = 0.0;
+}
