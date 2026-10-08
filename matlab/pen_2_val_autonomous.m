@@ -13,7 +13,6 @@ for i = 2:length(t_span)
     x(:, i) = x(:, i-1) + fx*dt;
 end
 
-
 %% plot
 figure(1)
 clf
@@ -52,7 +51,7 @@ g = 9.81;
 l = 0.18211;
 d = 0.021421;
 % f = 27.692;
-f = 0; % remove friction
+f = 0;                       % remove friction
 m = .2;
 fx = [x(2);
     -g/l*180/pi*sind(x(1)) - d/l^2*x(2) - f*tanh(x(2)*m)];

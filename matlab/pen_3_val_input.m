@@ -13,7 +13,6 @@ for i = 2:length(t_span)
     x(:, i) = x(:, i-1) + fx*dt;
 end
 
-
 %% plot
 figure(1)
 clf
@@ -52,14 +51,14 @@ function fx = f(x, u)
 g = 9.81;
 
 % pendulum constants
-l = 0.18211; % [m] for no weight attached
-d = 0.021421; % [Nm.s/deg]
+l = 0.18211;                 % [m] for no weight attached
+d = 0.021421;                % [Nm.s/deg]
 % f = 27.692; % [Nm]
-f = 0; % [Nm] remove friction (insignificant)
-m = .2; % [-] constant for steepness of tanh approximation of friction
+f = 0;                       % [Nm] remove friction (insignificant)
+m = .2;                      % [-] constant for steepness of tanh approximation of friction
 
 % input constants
-lf = 0.14; % [m] distance between rotation axes and pendulum
+lf = 0.14;                   % [m] distance between rotation axes and pendulum
 
 
 % f(x) calculation

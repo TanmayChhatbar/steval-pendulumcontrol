@@ -21,8 +21,8 @@ ts = tic;
 % mode = 1 == inverted stabilize
 mode = 1;
 if mode == 0
-    Av = 200; % [deg/s]
-    fv = 2; % [hz]
+    Av = 200;                % [deg/s]
+    fv = 2;                  % [hz]
 elseif mode == 1
     setpoint = 180;
 end
