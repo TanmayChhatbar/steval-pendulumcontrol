@@ -23,6 +23,7 @@ void CustomEncoder::begin()
     attachInterrupt(digitalPinToInterrupt(_pinB), (voidFuncPtr)[]() { instance->update(); }, CHANGE);
 
     xTaskCreate(velocityTask, "encoder velocity", 256, this, 2, nullptr);
+    xTaskCreate(velocityFilterTask, "encoder velocity filter", 256, this, 2, nullptr);
 }
 
 void CustomEncoder::velocityTask(void *arg)
@@ -37,6 +38,19 @@ void CustomEncoder::velocityTask(void *arg)
         {
             encoder->updateVelocity();
         }
+        vTaskDelayUntil(&lastWake, period);
+    }
+}
+
+void CustomEncoder::velocityFilterTask(void *arg)
+{
+    auto *encoder = static_cast<CustomEncoder *>(arg);
+    TickType_t lastWake = xTaskGetTickCount();
+    const TickType_t period = pdMS_TO_TICKS(10);
+
+    for (;;)
+    {
+        encoder->updateFilteredVelocity();
         vTaskDelayUntil(&lastWake, period);
     }
 }

@@ -6,6 +6,22 @@
 CustomEncoder myEnc(D5, D4, 600U);
 CustomStepper myStepper(D7, D9, 1.8f / 16.0f);
 
+void serialTask(void *pvParameters)
+{
+    TickType_t lastWake = xTaskGetTickCount();
+    const TickType_t period = pdMS_TO_TICKS(10);
+    for (;;)
+    {
+        Serial.print(myEnc.getPosition());
+        Serial.print(",");
+        Serial.print(myEnc.getVelocity());
+        Serial.print(",");
+        Serial.println(myStepper.getPosition());
+
+        vTaskDelayUntil(&lastWake, period);
+    }
+}
+
 void setup()
 {
     Serial.begin(921600);
@@ -15,6 +31,7 @@ void setup()
     Serial.println(myStepper.getPosition());
     delay(1000);
     myStepper.setAcceleration(5000.0f);
+    xTaskCreate(serialTask, "Serial Task", 256, NULL, 1, NULL);
     vTaskStartScheduler();
 }
 
@@ -50,13 +67,4 @@ void loop()
         // if no command received, zero velocity
         myStepper.setVelocitySetPoint(0.0f);
     }
-
-    myEnc.updateFilteredVelocity();
-
-    Serial.print(myEnc.getPosition());
-    Serial.print(",");
-    Serial.print(myEnc.getVelocity());
-    Serial.print(",");
-    Serial.println(myStepper.getPosition());
-    delay(10);
 }

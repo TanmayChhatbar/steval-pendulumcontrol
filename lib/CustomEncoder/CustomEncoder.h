@@ -19,6 +19,7 @@ public:
 
 private:
     static void velocityTask(void *arg);
+    static void velocityFilterTask(void *arg);
     void update();
     void updateVelocity();
 
