@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include <functional>
 
-#define Ts 0.01
-#define rise_time 0.1
+#define Ts 0.001
+#define rise_time 0.01
 #define LPF (1 - exp(-Ts / rise_time))
 
 // define as input pullup

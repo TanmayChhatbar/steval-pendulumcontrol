@@ -46,7 +46,7 @@ void CustomEncoder::velocityFilterTask(void *arg)
 {
     auto *encoder = static_cast<CustomEncoder *>(arg);
     TickType_t lastWake = xTaskGetTickCount();
-    const TickType_t period = pdMS_TO_TICKS(10);
+    const TickType_t period = pdMS_TO_TICKS(1);
 
     for (;;)
     {
@@ -114,7 +114,8 @@ void CustomEncoder::updateVelocity()
     uint32_t elapsedTime = currentTime_us - _lastTimeForVelocity_us;
     if (elapsedTime > 0)
     {
-        _velocity = (_position - _lastPositionForVelocity) / (float(elapsedTime) / 1000000.0) / _resolution;
+        float dt = float(elapsedTime) / 1000000.0;
+        _velocity = (_position - _lastPositionForVelocity) / dt;
         _lastPositionForVelocity = _position;
         _lastTimeForVelocity_us = currentTime_us;
     }
