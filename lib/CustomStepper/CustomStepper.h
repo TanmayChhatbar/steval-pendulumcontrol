@@ -9,6 +9,7 @@ public:
     void begin();
     void setAcceleration(float accMax);
     void setCurrentLimit(float currentLimit);
+    void resetPosition();
 
 private:
     static void controlTask(void *arg);

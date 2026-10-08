@@ -235,3 +235,15 @@ void CustomStepper::controlTask(void *arg)
         vTaskDelayUntil(&lastWake, pdMS_TO_TICKS(CONTROL_PERIOD_MS));
     }
 }
+
+void CustomStepper::resetPosition()
+{
+    _velocity = 0.0;
+    _lastStepRate = 0;
+    _lastControlTimeUs = 0;
+
+    // also reset position in the driver
+    taskENTER_CRITICAL();
+    writeRegister(L6474_ABS_POS_REG, 0, 1);
+    taskEXIT_CRITICAL();
+}
