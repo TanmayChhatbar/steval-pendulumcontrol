@@ -60,8 +60,30 @@ syms T1 T2
 eqn1 = simplify(dot2(n1, z1) + b1*theta_1dot) == T1;
 eqn2 = simplify(dot2(n2, z2) + b2*theta_2dot) == T2*0;
 
+syms a1 a2 d1 d2
+e1 = subs(eqn1, [diff(theta_1(t), t, t), diff(theta_2(t), t, t)], [a1 a2]);
+e2 = subs(eqn2, [diff(theta_1(t), t, t), diff(theta_2(t), t, t)], [a1 a2]);
+
 %% function for acceleration with torque input
-%TODO
+% x = [theta1; theta1dot; theta2; theta2dot]
+% u = T1, the stepper-motor torque at the root
+accel = solve([e1 e2], [a1, a2]);
+
+syms x1 x2 x3 x4 u
+fx_sym = [x2;
+          subs(accel.a1, ...
+               [theta_1dot, theta_2dot, theta_1, theta_2, T1], ...
+               [x2, x4, x1, x3, u]);
+          x4;
+          subs(accel.a2, ...
+               [theta_1dot, theta_2dot, theta_1, theta_2, T1], ...
+               [x2, x4, x1, x3, u])];
+simplify(fx_sym)
+
+% % The final parameter vector is p = [g; l1; l2; m1; m2; Ii1; Ii2; b1; b2].
+% % Thus f_accel(x,u,p) returns [theta1dot; theta1ddot; theta2dot; theta2ddot].
+% p = [g; l1; l2; m1; m2; Ii1; Ii2; b1; b2];
+% f_accel = matlabFunction(fx_sym, 'Vars', {[x1; x2; x3; x4], u, p});
 
 %% function for acceleration with velocity input
 %TODO
