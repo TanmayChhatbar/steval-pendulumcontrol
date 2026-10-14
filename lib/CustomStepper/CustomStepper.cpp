@@ -244,6 +244,6 @@ void CustomStepper::resetPosition()
 
     // also reset position in the driver
     taskENTER_CRITICAL();
-    writeRegister(L6474_ABS_POS_REG, 0, 1);
+    writeRegister(L6474_ABS_POS_REG, 0, 3);
     taskEXIT_CRITICAL();
 }
