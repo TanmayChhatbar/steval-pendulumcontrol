@@ -55,10 +55,10 @@ n1 = N1 + R2.'*n2 + cross(l1v, F1) + cross(L1v, R2.'*f2);
 
 %% EOM
 z1 = R1*[0; 0; 1];
-z2 = R1.'*R2.'*z1;
-syms T1 T2
-eqn1 = simplify(dot2(n1, z1) + b1*theta_1dot) == T1;
-eqn2 = simplify(dot2(n2, z2) + b2*theta_2dot) == T2*0;
+% z2 = R1.'*R2.'*z1;
+syms T1 T2 % torques
+eqn1 = simplify(dot2(n1, z1) + b1*theta_1dot) - T1 == 0;
+eqn2 = simplify(dot2(n2, z1) + b2*theta_2dot) - T2*0 == 0; % z1 is correct
 
 syms a1 a2 d1 d2
 e1 = subs(eqn1, [diff(theta_1(t), t, t), diff(theta_2(t), t, t)], [a1 a2]);
@@ -78,15 +78,47 @@ fx_sym = [x2;
           subs(accel.a2, ...
                [theta_1dot, theta_2dot, theta_1, theta_2, T1], ...
                [x2, x4, x1, x3, u])];
-simplify(fx_sym)
+fx_sym = simplify(fx_sym);
 
-% % The final parameter vector is p = [g; l1; l2; m1; m2; Ii1; Ii2; b1; b2].
-% % Thus f_accel(x,u,p) returns [theta1dot; theta1ddot; theta2dot; theta2ddot].
 % p = [g; l1; l2; m1; m2; Ii1; Ii2; b1; b2];
+% % f_accel(x,u,p) returns [theta1dot; theta1ddot; theta2dot; theta2ddot].
 % f_accel = matlabFunction(fx_sym, 'Vars', {[x1; x2; x3; x4], u, p});
 
 %% function for acceleration with velocity input
 %TODO
+
+%% simulation
+clear
+x = zeros(4, 1e4);
+x0 = [0 0 1 0]';
+x(:, 1) = x0;
+dt = 1e-3;
+u = 0;
+ts = (1:width(x))*dt;
+for i = 2:width(x)
+    x(:, i) = x(:,i-1) + rk4(x(:, i-1), @f, u, dt)*dt;
+end
+
+% plot
+figure(1)
+for i = 1:height(x)
+    subplot(height(x), 1, i)
+    plot(ts, x(i, :))
+    grid on
+end
+
+% animate
+figure(2)
+p = plt_update();
+fps = 20;
+for i = find([0 diff(rem(ts, 1/fps))<0])
+    tnow = tic;
+    plt_update(p, rad2deg(x(1, i)), rad2deg(x(2, i)));
+    title(num2str(ts(i)) + " s")
+    drawnow
+    tnow = toc(tnow);
+    pause(max(1/fps - tnow, 0))
+end
 
 %% functions
 function fx = f(x, u)
@@ -98,27 +130,34 @@ g = 9.81;
 
 % pendulum constants (root-side)
 L1 = 0.14;                   % [m] distance between rotation axes and pendulum
-l1 = L1 / 2;
-m1 = 0;
-I1 = 0;
-b1 = 0;
-f1 = 0;
-I1 = diag(0, 11123.60, 11123.60) / 1e3 / 1e3^2;
+l1 = L1 / 2; % [m]
+m1 = 7.86 / 1e3; % [kg]
+b1 = 0; % [Nm.s/deg]
+% f1 = 0;
+Ii1 = 11123.60 / 1e3^3;
 
 % pendulum constants (tip-side)
 l2 = 0.18211;                 % [m] for no weight attached
 b2 = 0.021421;                % [Nm.s/deg]
 % f = 27.692; % [Nm]
-f2 = 0;                       % [Nm] remove friction (insignificant)
-m = .2;                      % [-] constant for steepness of tanh approximation of friction
-I2 = diag(0, 82688.70, 82688.70) / 1e3 / 1e3^2;
+% f2 = 0;                       % [Nm] remove friction (insignificant)
+% m = .2;                      % [-] constant for steepness of tanh approximation of friction
+Ii2 = 84655.81 / 1e3^3;
+m2 = 15.48 / 1e3; % [kg]
 
 % input constants
-
+x1 = x(1);
+x2 = x(2);
+x3 = x(3);
+x4 = x(4);
 
 % f(x) calculation
-fx = [x(2);
-    -g/l*180/pi*sind(x(1)) - d/l^2*x(2) - f*tanh(x(2)*m)];
+fx = [
+x2;
+(2*Ii2*u + 2*l2^2*m2*u - 2*Ii2*b1*x2 - 2*Ii2^2*x2*x4*sin(2*x3) - 2*b1*l2^2*m2*x2 + 2*L1*l2^3*m2^2*x4^2*sin(x3) - 2*l2^4*m2^2*x2*x4*sin(2*x3) + L1*g*l2^2*m2^2*sin(2*x3) - 4*Ii2*l2^2*m2*x2*x4*sin(2*x3) + 2*L1*b2*l2*m2*x4*cos(x3) + 2*Ii2*L1*l2*m2*x4^2*sin(x3) + 2*L1*l2^3*m2^2*x2^2*sin(x3)*(sin(x3)^2 - 1) + 2*Ii2*L1*l2*m2*x2^2*sin(x3)*(sin(x3)^2 - 1))/(2*(Ii2^2 - Ii2^2*cos(x3)^2 + Ii1*Ii2 + l2^4*m2^2 - l2^4*m2^2*cos(x3)^2 + L1^2*l2^2*m2^2 + Ii2*L1^2*m2 + Ii2*l1^2*m1 + Ii1*l2^2*m2 + 2*Ii2*l2^2*m2 - 2*Ii2*l2^2*m2*cos(x3)^2 + l1^2*l2^2*m1*m2 - L1^2*l2^2*m2^2*cos(x3)^2));
+x4;
+(Ii2^2*x2^2*sin(2*x3) - (Ii2^2*x2^2*sin(4*x3))/2 - 4*Ii1*b2*x4 - 2*Ii2*b2*x4 + 2*Ii1*Ii2*x2^2*sin(2*x3) + l2^4*m2^2*x2^2*sin(2*x3) - (l2^4*m2^2*x2^2*sin(4*x3))/2 - 3*g*l2^3*m2^2*sin(x3) - 4*L1^2*b2*m2*x4 - 4*b2*l1^2*m1*x4 - 2*b2*l2^2*m2*x4 + g*l2^3*m2^2*sin(3*x3) + 2*Ii2*b2*x4*cos(2*x3) + 2*Ii2*l1^2*m1*x2^2*sin(2*x3) + 2*Ii1*l2^2*m2*x2^2*sin(2*x3) + 2*Ii2*l2^2*m2*x2^2*sin(2*x3) - Ii2*l2^2*m2*x2^2*sin(4*x3) + Ii2*g*l2*m2*sin(3*x3) - 4*L1^2*g*l2*m2^2*sin(x3) + 2*b2*l2^2*m2*x4*cos(2*x3) + 2*L1^2*l2^2*m2^2*x2^2*sin(2*x3) - 2*L1^2*l2^2*m2^2*x4^2*sin(2*x3) - 4*Ii1*g*l2*m2*sin(x3) - 3*Ii2*g*l2*m2*sin(x3) - 4*L1*l2*m2*u*cos(x3) + 2*Ii2*L1^2*m2*x2^2*sin(2*x3) + 2*L1*l2^3*m2^2*x2*x4*sin(x3) + 4*L1*b1*l2*m2*x2*cos(x3) + 2*L1*l2^3*m2^2*x2*x4*sin(3*x3) - 4*g*l1^2*l2*m1*m2*sin(x3) + 2*l1^2*l2^2*m1*m2*x2^2*sin(2*x3) + 2*Ii2*L1*l2*m2*x2*x4*sin(3*x3) + 2*Ii2*L1*l2*m2*x2*x4*sin(x3))/(4*(Ii2^2 - Ii2^2*cos(x3)^2 + Ii1*Ii2 + l2^4*m2^2 - l2^4*m2^2*cos(x3)^2 + L1^2*l2^2*m2^2 + Ii2*L1^2*m2 + Ii2*l1^2*m1 + Ii1*l2^2*m2 + 2*Ii2*l2^2*m2 - 2*Ii2*l2^2*m2*cos(x3)^2 + l1^2*l2^2*m1*m2 - L1^2*l2^2*m2^2*cos(x3)^2))    
+];
 end
 
 function R = eul2rotm2(z, y, x)
