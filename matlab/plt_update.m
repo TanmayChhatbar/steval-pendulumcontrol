@@ -5,7 +5,7 @@ if nargin <= 1
         p(1) = plot3(ax, ay, az);
         hold on
         p(2) = plot3(ax(2:3)*0.18211/0.256, ay(2:3)*0.18211/0.256, az(2:3)*0.18211/0.256, 'r.', 'markersize', 30);
-        p(3) = plot3(0, 0, 0, 'r.', 'markersize', 30)
+        p(3) = plot3(0, 0, 0, 'r.', 'markersize', 30);
         hold off
         varargout{1} = p;
     end

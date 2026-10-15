@@ -100,10 +100,17 @@ f_vel_sym = [u;
 f_vel_sym = simplify(f_vel_sym)
 
 %% jacobian
-x_sp = [0 0 0 0];
+x_sp = [0 pi 0 0];
 u_sp = 0;
 J1 = jacobian(f_vel_sym, [x1 x2 x3 x4]);
-JA = subs(J1, [x1 x2 x3 x4 u], [x_sp u_sp])
+JA = subs(J1, [x1 x2 x3 x4 u], [x_sp u_sp]);
 
 J2 = jacobian(f_vel_sym, u);
-JB = subs(J2, [x1 x2 x3 x4 u], [x_sp u_sp])
+JB = subs(J2, [x1 x2 x3 x4 u], [x_sp u_sp]);
+
+% overwrite to remember the last vel
+JA(4,4) = -1;
+JB(4,1) = 1;
+
+fprintf("A = ["+join(join(string(JA), ', '), ';\n    ')+"\n];\n")
+fprintf("B = ["+join(string(JB), ';\n    ')+"\n];\n")

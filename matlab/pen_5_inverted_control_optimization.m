@@ -4,13 +4,14 @@ clear
 clc
 
 x0 = [20 1000 100 0];
-[optx, score] = fmincon(@valscore, x0, [], [], [], [], ones(size(x0))*1, ones(size(x0))*10000);
-otpx = optx'
+[optx, score] = fmincon(@valscore, x0, [], [], [], [], ones(size(x0))*0, ones(size(x0))*10000);
+disp("qd = ["+join(string(num2str(optx')), ', ') + "];")
+return
+
+%% plot
 [score, score_t, xv] = valscore(optx);
 dt = 1e-3;
 t = (1:length(score_t))*dt;
-
-%% plot
 figure(3); clf
 m = ceil(sqrt(height(xv)+1));
 n = ceil((height(xv)+1) / m);
@@ -36,14 +37,16 @@ g = 9.81;
 dt = 1e-3;
 
 % linearized model in rad/s
-A = [0,                         0,                   0,                                0;
-     0,                         0,                   1,                                0;
-     0, (g*l2*m2)/(m2*l2^2 + Ii2), -b2/(m2*l2^2 + Ii2), -(L1*l2*m2)/(dt*(m2*l2^2 + Ii2));
-     0,                         0,                   0,                                -1];
-B = [1
-     0
-     (L1*l2*m2)/(dt*(m2*l2^2 + Ii2))
-     1];
+A = [0, 0, 0, 0;
+    0, 0, 1, 0;
+    0, (g*l2*m2)/(Ii2 + l2^2*m2), -b2/(Ii2 + l2^2*m2), -(L1*l2*m2)/(dt*(Ii2 + l2^2*m2));
+    0, 0, 0, -1
+];
+B = [1;
+    0;
+    (L1*l2*m2)/(dt*(Ii2 + l2^2*m2));
+    1
+];
 
 % LQR
 Q = diag(xv);
@@ -54,7 +57,9 @@ catch
     score = inf;
     return
 end
-n = 1e3;
+
+dt = 1e-3;
+n = 500;
 x = zeros(4, n);
 x(:, 1) = [0 165 0 0]'; % [deg, deg, deg/s, deg/s]
 x_sp = [0 180 0 0]';
@@ -81,7 +86,7 @@ end
 % score = sum((x-x_sp)*(x-x_sp)', 'all');
 err = x-x_sp;
 % [stepPos, encPos, encVel, stepVelLast]
-err = err .* [10 2 1 1]';
+err = err .* [40 2 1 0.1]';
 score_t = sum(err.^2, 'all');
 score = sum(score_t);
 end

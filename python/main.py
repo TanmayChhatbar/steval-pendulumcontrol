@@ -19,7 +19,10 @@ def main():
         setpoint = 180
     elif mode == 2:
         setpoint = 180
-        K = [-1.0488, 122.9508, 10.1096, -60.619] # for x = [stepPos, encPos, encVel, stepVelLast]
+        # K = [-1.0488, 122.9508, 10.1096, -60.619] # for x = [stepPos, encPos, encVel, stepVelLast]
+        # K = [-2.67226,  47.3769,  2.38368, -58.4731]
+        # K = [-1.632569,  101.0551,  19.27821, -67.99174]
+        K = [-1.63257,   90.547,  19.2718, -64.3262]
         vc_last = 0
 
     start = time.perf_counter()
@@ -30,7 +33,7 @@ def main():
     t_read = []
     t_write = []
 
-    while time.perf_counter() - start < 10:
+    while time.perf_counter() - start < 30:
         state = readState(port)
         if state is None:
             continue
@@ -66,10 +69,21 @@ def main():
             dt_control = t - tlast
             x_sp = [0, 180, 0, 0]
             err = [x_sp[0] - stepper_pos, x_sp[1] - enc_pos, x_sp[2] - enc_vel, x_sp[3] - vc_last]
-            if abs(enc_pos-x_sp[1]) < 15:
-                vc = (K[0] * err[0] + K[1] * err[1] + K[2] * err[2] + K[3] * err[3]) / 57.2958
+            vc = 0
+            if abs(enc_pos-x_sp[1]) < 25:
+                # raw command
+                vcc = (K[0] * err[0] + K[1] * err[1] + K[2] * err[2] + K[3] * err[3]) / 57.2958
+                
+                # limit acceleration
+                dv_max = 8000 * dt_control
+                dv = min(max(vcc - vc_last, -dv_max), dv_max)
+                
+                # limit velocity
+                v_max = 600
+                vc = min(max(vc_last + dv, -v_max), v_max)
             else:
                 vc = 0
+                
             vc_last = vc
             tlast = t
         # write

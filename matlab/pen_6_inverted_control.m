@@ -21,35 +21,35 @@ m2 = 15.48 / 1e3;            % [kg]
 g = 9.81;
 
 % linearized model in rad/s
-A = [0,                         0,                   0,                                0;
-     0,                         0,                   1,                                0;
-     0, (g*l2*m2)/(m2*l2^2 + Ii2), -b2/(m2*l2^2 + Ii2), -(L1*l2*m2)/(dt*(m2*l2^2 + Ii2));
-     0,                         0,                   0,                                -1];
-B = [1
-     0
-     (L1*l2*m2)/(dt*(m2*l2^2 + Ii2))
-     1];
+A = [0, 0, 0, 0;
+    0, 0, 1, 0;
+    0, (g*l2*m2)/(Ii2 + l2^2*m2), -b2/(Ii2 + l2^2*m2), -(L1*l2*m2)/(dt*(Ii2 + l2^2*m2));
+    0, 0, 0, -1
+];
+B = [1;
+    0;
+    (L1*l2*m2)/(dt*(Ii2 + l2^2*m2));
+    1
+];
 
-%% LQR
-qd = 1e3*[
-   0.009694566897750
-   1.696065869892097
-   0.010372006197850
-   0.001000000962990
-   ];
-% qd = [20 1000 100 0];
+% LQR
+qd = [    2.6652825,     7999.9996,     367.38097, 0.00035031079];
 Q = diag(qd);
 R = 1;
-K = lqr(A, B, Q, R)
+K = lqr(A, B, Q, R);
+disp("K = ["+join(string(num2str(K')), ', ') + "];")
+
 
 %% simulation
 x = zeros(4, n);
-x(:, 1) = [0 155 0 0]'; % [deg, deg, deg/s, deg/s]
+x(:, 1) = [0 180 0 -10]'; % [deg, deg, deg/s, deg/s]
 x_sp = [0 180 0 0]';
 u_p = 0;
+k1 = 0.08;
 for i = 2:width(x)
     % control input
     u = K*deg2rad(x_sp-x(:,i-1)); % [deg]
+    u = u + k1 * x(1, i-1);
     du_max = inf/dt;
     u_max = inf;
     du = min(max(u-u_p, -du_max), du_max);
