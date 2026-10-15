@@ -9,6 +9,7 @@ dt = 1e-3;
 % pendulum constants
 L1 = 0.14;                   % [m] distance between rotation axes and pendulum
 l2 = 0.18211;                % [m] for no weight attached
+% L2 = 0.256;                  % [m] length of tip-arm
 b2 = deg2rad(0.021421);      % [Nm.s/deg]
 Ii2 = 84655.81 / 1e3^3;      % [kg.m^2]
 m2 = 15.48 / 1e3;            % [kg]
