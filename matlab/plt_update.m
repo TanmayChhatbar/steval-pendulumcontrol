@@ -18,7 +18,6 @@ elseif nargin == 3
     p.XData = ax;
     p.YData = ay;
     p.ZData = az;
-    drawnow limitrate
 end
 end
 
