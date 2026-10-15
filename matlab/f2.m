@@ -10,13 +10,13 @@ dt = 1e-3;
 L1 = 0.14;                   % [m] distance between rotation axes and pendulum
 
 % pendulum constants (tip-side)
-l2 = 0.18211;                 % [m] for no weight attached
-b2 = deg2rad(0.021421);                % [Nm.s/deg]
+l2 = 0.18211;                % [m] for no weight attached
+b2 = deg2rad(0.021421);      % [Nm.s/deg]
 % f = 27.692; % [Nm]
 % f2 = 0;                       % [Nm] remove friction (insignificant)
 % m = .2;                      % [-] constant for steepness of tanh approximation of friction
-Ii2 = 84655.81 / 1e3^3; % [kg.m^2]
-m2 = 15.48 / 1e3; % [kg]
+Ii2 = 84655.81 / 1e3^3;      % [kg.m^2]
+m2 = 15.48 / 1e3;            % [kg]
 
 % input constants
 x1 = x(1);

@@ -56,7 +56,7 @@ n1 = N1 + R2.'*n2 + cross(l1v, F1) + cross(L1v, R2.'*Ff2);
 %% EOM
 z1 = R1*[0; 0; 1];
 % z2 = R1.'*R2.'*z1;
-syms T1 T2 % torques
+syms T1 T2                                                 % torques
 eqn1 = simplify(dot2(n1, z1) + b1*theta_1dot) - T1 == 0;
 eqn2 = simplify(dot2(n2, z1) + b2*theta_2dot) - T2*0 == 0; % z1 is correct
 
@@ -96,5 +96,5 @@ f_vel_sym = [u;
              subs(theta2ddot_vel, ...
                   [theta_2dot, theta_1, theta_2], ...
                   [x3, x1, x2]);
-             0]; % x4 stores the previous command. need to update it to u after each step.
+             0];                                           % x4 stores the previous command. need to update it to u after each step.
 f_vel_sym = simplify(f_vel_sym)
