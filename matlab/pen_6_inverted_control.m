@@ -15,7 +15,7 @@ ts = (1:n)*dt;
 
 L1 = 0.14;                   % [m] distance between rotation axes and pendulum
 l2 = 0.18211;                % [m] for no weight attached
-b2 = deg2rad(0.021421);      % [Nm.s/rad]
+b2 = deg2rad(0.021421);      % [Nm.s/deg]
 Ii2 = 84655.81 / 1e3^3;      % [kg.m^2]
 m2 = 15.48 / 1e3;            % [kg]
 g = 9.81;
@@ -31,21 +31,30 @@ B = [1
      1];
 
 %% LQR
-Q = diag([1.1 15000 100 0]);
+qd = 1e3*[
+   0.009694566897750
+   1.696065869892097
+   0.010372006197850
+   0.001000000962990
+   ];
+% qd = [20 1000 100 0];
+Q = diag(qd);
 R = 1;
 K = lqr(A, B, Q, R)
 
 %% simulation
 x = zeros(4, n);
-x(:, 1) = [0 170 0 0]'; % [deg, deg, deg/s, deg/s]
+x(:, 1) = [0 155 0 0]'; % [deg, deg, deg/s, deg/s]
 x_sp = [0 180 0 0]';
 u_p = 0;
 for i = 2:width(x)
     % control input
     u = K*deg2rad(x_sp-x(:,i-1)); % [deg]
-    du = min(max(u-u_p, -300/dt), 300/dt);
+    du_max = inf/dt;
+    u_max = inf;
+    du = min(max(u-u_p, -du_max), du_max);
     u = u + du;
-    u = min(max(u, -360), 360);
+    u = min(max(u, -u_max), u_max);
     u_p = u;
 
     % fx
@@ -57,15 +66,16 @@ for i = 2:width(x)
 end
 
 %% plot
-figure(1)
+figure(1); clf
 for i = 1:height(x)
     subplot(height(x), 1, i)
     plot(ts, x(i, :))
+    yline(x_sp(i), '--', 'linewidth', 4)
     grid on
 end
 
-% animate
-figure(2)
+% % animate
+figure(2); clf
 p = plt_update();
 fps = 50;
 for i = find([0 diff(rem(ts, 1/fps))<0])
