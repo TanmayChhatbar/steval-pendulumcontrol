@@ -42,11 +42,12 @@ x_sp = [0 180 0 0]';
 u_p = 0;
 for i = 2:width(x)
     % control input
-    u = -K*deg2rad(x(:,i-1)-x_sp); % [deg]
+    u = K*deg2rad(x_sp-x(:,i-1)); % [deg]
     du = min(max(u-u_p, -300/dt), 300/dt);
     u = u + du;
     u = min(max(u, -360), 360);
     u_p = u;
+
     % fx
     fx_rad = rk4(deg2rad(x(:, i-1)), @f2, deg2rad(u), dt);
 

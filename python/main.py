@@ -2,6 +2,7 @@ import math
 import time
 import matplotlib.pyplot as plt
 from utils import *
+import keyboard
 
 def main():
     # connect to pendulum
@@ -10,12 +11,16 @@ def main():
     writeReset(port) # reset the position of the encoder and stepper in firmware
     time.sleep(0.1)
 
-    mode = 1  # 0 = sinusoidal, 1 = inverted stabilization
+    mode = 2  # 0 = sinusoidal, 1 = inverted (PD control), 2 = LQR
     if mode == 0:
         amplitude = 200  # deg/s
         frequency = 2     # Hz
-    else:
+    elif mode == 1:
         setpoint = 180
+    elif mode == 2:
+        setpoint = 180
+        K = [-1.0488, 122.9508, 10.1096, -60.619] # for x = [stepPos, encPos, encVel, stepVelLast]
+        vc_last = 0
 
     start = time.perf_counter()
     tlast = 0.0
@@ -30,7 +35,7 @@ def main():
         if state is None:
             continue
 
-        _, enc_pos_new, enc_vel_reported, _ = state
+        _, enc_pos_new, enc_vel_reported, stepper_pos = state
         t = time.perf_counter() - start  # host-side line arrival time
         if t_read:
             dt = t - t_read[-1]
@@ -44,7 +49,7 @@ def main():
 
         if mode == 0:
             vc = amplitude * math.sin(2 * math.pi * frequency * t) * (t < 5)
-        else:
+        elif mode == 1:
             dt_control = t - tlast
             err = setpoint - enc_pos
             errcum += err * dt_control
@@ -56,20 +61,50 @@ def main():
             else:
                 vc = 0
             tlast = t
-
+            
+        elif mode == 2:
+            dt_control = t - tlast
+            x_sp = [0, 180, 0, 0]
+            err = [x_sp[0] - stepper_pos, x_sp[1] - enc_pos, x_sp[2] - enc_vel, x_sp[3] - vc_last]
+            if abs(enc_pos-x_sp[1]) < 15:
+                vc = (K[0] * err[0] + K[1] * err[1] + K[2] * err[2] + K[3] * err[3]) / 57.2958
+            else:
+                vc = 0
+            vc_last = vc
+            tlast = t
+        # write
         writeSpeed(port, vc)
         t_write.append(t)
+        print(f"t: {t:.3f}\tenc_pos: {enc_pos:.3f}\tenc_vel: {enc_vel:.3f}\tvc: {vc:.3f}\tstepper_pos: {stepper_pos:.3f}")
+        
+        # exit if 'q' is pressed
+        if keyboard.is_pressed('q'):
+            writeSpeed(port, 0)
+            time.sleep(0.1)
+            stepper_pos = -100
+            is_swinging = True
+            last_swing_time = time.perf_counter()
+            while abs(stepper_pos) > 0.5 or is_swinging:
+                #TODO wrap theta state to [-180, 180]
+                state = readState(port)
+                if state is None:
+                    continue
+                _, enc_pos, enc_vel, stepper_pos = state
+                writeSpeed(port, -min(max(-80, stepper_pos*16), 80))
+                t = time.perf_counter() - start  # host-side line arrival time
+                print(f"t: {t:.3f}\tenc_pos: {enc_pos:.3f}\tenc_vel: {enc_vel:.3f}\tvc: {vc:.3f}\tstepper_pos: {stepper_pos:.3f}")
+                if abs(enc_vel) > 50:
+                    is_swinging = True
+                    last_swing_time = time.perf_counter()
+                elif abs(enc_vel) < 5 and time.perf_counter() - last_swing_time > 0.1:
+                    is_swinging = False
+
+            writeSpeed(port, 0)
+            break
 
     writeSpeed(port, 0)
     writeCurrent(port, 250)
     port.close()
-
-    plt.subplot(2, 1, 1)
-    plt.hist([b - a for a, b in zip(t_read, t_read[1:])], bins=301)
-    plt.subplot(2, 1, 2)
-    plt.hist([b - a for a, b in zip(t_write, t_write[1:])], bins=301)
-    plt.show()
-
 
 if __name__ == "__main__":
     main()

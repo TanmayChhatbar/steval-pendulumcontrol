@@ -24,6 +24,6 @@ def readState(port):
             print(f"unknown line: {line}")
             return None
 
-        return tuple(values)  # device time, encoder position/velocity, stepper position
+        return tuple(values)  # device time, encoder position, encoder velocity, stepper position
     except:
         return tuple([nan, nan, nan, nan])
