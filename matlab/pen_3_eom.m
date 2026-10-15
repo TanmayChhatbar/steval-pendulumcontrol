@@ -47,11 +47,11 @@ F2 = m2*v2cdot;
 N2 = I2*w2dot + cross(w2, I2*w2);
 
 %% inward iteration
-f2 = F2;
+Ff2 = F2;
 n2 = N2 + cross(l2v, F2);
 
-f1 = F1 + R2.'*f2;
-n1 = N1 + R2.'*n2 + cross(l1v, F1) + cross(L1v, R2.'*f2);
+Ff1 = F1 + R2.'*Ff2;
+n1 = N1 + R2.'*n2 + cross(l1v, F1) + cross(L1v, R2.'*Ff2);
 
 %% EOM
 z1 = R1*[0; 0; 1];
@@ -80,111 +80,21 @@ fx_sym = [x2;
                [x2, x4, x1, x3, u])];
 fx_sym = simplify(fx_sym);
 
-% p = [g; l1; l2; m1; m2; Ii1; Ii2; b1; b2];
-% % f_accel(x,u,p) returns [theta1dot; theta1ddot; theta2dot; theta2ddot].
-% f_accel = matlabFunction(fx_sym, 'Vars', {[x1; x2; x3; x4], u, p});
-
 %% function for acceleration with velocity input
-%TODO
+% x = [theta1; theta2; theta2dot; w1_cmd_last]
+% u = [w1_cmd]
+syms u x1 x2 x3 x4 dt real
 
-%% simulation
-clear
-x = zeros(4, 1e4);
-x0 = [0 0 1 0]';
-x(:, 1) = x0;
-dt = 1e-3;
-u = 0;
-ts = (1:width(x))*dt;
-for i = 2:width(x)
-    x(:, i) = x(:,i-1) + rk4(x(:, i-1), @f, u, dt)*dt;
-end
+% root acceleration is known from the commanded velocity profile
+e2_vel = subs(e2, [theta_1dot, a1], [u, (u-x4)/dt]);
 
-% plot
-figure(1)
-for i = 1:height(x)
-    subplot(height(x), 1, i)
-    plot(ts, x(i, :))
-    grid on
-end
+% solve the unactuated encoder-side EOM for theta2 acceleration
+theta2ddot_vel = solve(e2_vel, a2);
 
-% animate
-figure(2)
-p = plt_update();
-fps = 20;
-for i = find([0 diff(rem(ts, 1/fps))<0])
-    tnow = tic;
-    plt_update(p, rad2deg(x(1, i)), rad2deg(x(2, i)));
-    title(num2str(ts(i)) + " s")
-    drawnow
-    tnow = toc(tnow);
-    pause(max(1/fps - tnow, 0))
-end
-
-%% functions
-function fx = f(x, u)
-% x = [encPos, enVel, stepPos, stepVel]
-% u = [stepTau]
-
-% global constants
-g = 9.81;
-
-% pendulum constants (root-side)
-L1 = 0.14;                   % [m] distance between rotation axes and pendulum
-l1 = L1 / 2; % [m]
-m1 = 7.86 / 1e3; % [kg]
-b1 = 0; % [Nm.s/deg]
-% f1 = 0;
-Ii1 = 11123.60 / 1e3^3;
-
-% pendulum constants (tip-side)
-l2 = 0.18211;                 % [m] for no weight attached
-b2 = 0.021421;                % [Nm.s/deg]
-% f = 27.692; % [Nm]
-% f2 = 0;                       % [Nm] remove friction (insignificant)
-% m = .2;                      % [-] constant for steepness of tanh approximation of friction
-Ii2 = 84655.81 / 1e3^3;
-m2 = 15.48 / 1e3; % [kg]
-
-% input constants
-x1 = x(1);
-x2 = x(2);
-x3 = x(3);
-x4 = x(4);
-
-% f(x) calculation
-fx = [
-x2;
-(2*Ii2*u + 2*l2^2*m2*u - 2*Ii2*b1*x2 - 2*Ii2^2*x2*x4*sin(2*x3) - 2*b1*l2^2*m2*x2 + 2*L1*l2^3*m2^2*x4^2*sin(x3) - 2*l2^4*m2^2*x2*x4*sin(2*x3) + L1*g*l2^2*m2^2*sin(2*x3) - 4*Ii2*l2^2*m2*x2*x4*sin(2*x3) + 2*L1*b2*l2*m2*x4*cos(x3) + 2*Ii2*L1*l2*m2*x4^2*sin(x3) + 2*L1*l2^3*m2^2*x2^2*sin(x3)*(sin(x3)^2 - 1) + 2*Ii2*L1*l2*m2*x2^2*sin(x3)*(sin(x3)^2 - 1))/(2*(Ii2^2 - Ii2^2*cos(x3)^2 + Ii1*Ii2 + l2^4*m2^2 - l2^4*m2^2*cos(x3)^2 + L1^2*l2^2*m2^2 + Ii2*L1^2*m2 + Ii2*l1^2*m1 + Ii1*l2^2*m2 + 2*Ii2*l2^2*m2 - 2*Ii2*l2^2*m2*cos(x3)^2 + l1^2*l2^2*m1*m2 - L1^2*l2^2*m2^2*cos(x3)^2));
-x4;
-(Ii2^2*x2^2*sin(2*x3) - (Ii2^2*x2^2*sin(4*x3))/2 - 4*Ii1*b2*x4 - 2*Ii2*b2*x4 + 2*Ii1*Ii2*x2^2*sin(2*x3) + l2^4*m2^2*x2^2*sin(2*x3) - (l2^4*m2^2*x2^2*sin(4*x3))/2 - 3*g*l2^3*m2^2*sin(x3) - 4*L1^2*b2*m2*x4 - 4*b2*l1^2*m1*x4 - 2*b2*l2^2*m2*x4 + g*l2^3*m2^2*sin(3*x3) + 2*Ii2*b2*x4*cos(2*x3) + 2*Ii2*l1^2*m1*x2^2*sin(2*x3) + 2*Ii1*l2^2*m2*x2^2*sin(2*x3) + 2*Ii2*l2^2*m2*x2^2*sin(2*x3) - Ii2*l2^2*m2*x2^2*sin(4*x3) + Ii2*g*l2*m2*sin(3*x3) - 4*L1^2*g*l2*m2^2*sin(x3) + 2*b2*l2^2*m2*x4*cos(2*x3) + 2*L1^2*l2^2*m2^2*x2^2*sin(2*x3) - 2*L1^2*l2^2*m2^2*x4^2*sin(2*x3) - 4*Ii1*g*l2*m2*sin(x3) - 3*Ii2*g*l2*m2*sin(x3) - 4*L1*l2*m2*u*cos(x3) + 2*Ii2*L1^2*m2*x2^2*sin(2*x3) + 2*L1*l2^3*m2^2*x2*x4*sin(x3) + 4*L1*b1*l2*m2*x2*cos(x3) + 2*L1*l2^3*m2^2*x2*x4*sin(3*x3) - 4*g*l1^2*l2*m1*m2*sin(x3) + 2*l1^2*l2^2*m1*m2*x2^2*sin(2*x3) + 2*Ii2*L1*l2*m2*x2*x4*sin(3*x3) + 2*Ii2*L1*l2*m2*x2*x4*sin(x3))/(4*(Ii2^2 - Ii2^2*cos(x3)^2 + Ii1*Ii2 + l2^4*m2^2 - l2^4*m2^2*cos(x3)^2 + L1^2*l2^2*m2^2 + Ii2*L1^2*m2 + Ii2*l1^2*m1 + Ii1*l2^2*m2 + 2*Ii2*l2^2*m2 - 2*Ii2*l2^2*m2*cos(x3)^2 + l1^2*l2^2*m1*m2 - L1^2*l2^2*m2^2*cos(x3)^2))    
-];
-end
-
-function R = eul2rotm2(z, y, x)
-% ZYX
-% Rz = [cos(a(1)) -sin(a(1)) 0; 
-%     sin(a(1)) cos(a(1)) 0; 
-%     0 0 1];
-% Ry = [cos(a(2)) 0 sin(a(2)); 
-%     0 1 0;
-%     -sin(a(2)) 0 cos(a(2))];
-% Rx = [1 0 0;
-%     0 cos(a(3)) -sin(a(3)); 
-%     0 sin(a(3)) cos(a(3))];
-% Rx, Ry, Rz
-% R = Rz*Ry*Rx;
-c1 = cos(z);
-c2 = cos(y);
-c3 = cos(x);
-s1 = sin(z);
-s2 = sin(y);
-s3 = sin(x);
-
-R = [c1*c2, c1*s2*s3 - c3*s1, s1*s3 + c1*c3*s2;
-     c2*s1, c1*c3 + s1*s2*s3, c3*s1*s2 - c1*s3;
-     -s2,   c2*s3,            c2*c3           ];
-end
-
-function c = dot2(a, b)
-c = sum(a .* b);
-end
+f_vel_sym = [u;
+             x3;
+             subs(theta2ddot_vel, ...
+                  [theta_2dot, theta_1, theta_2], ...
+                  [x3, x1, x2]);
+             0]; % x4 stores the previous command. need to update it to u after each step.
+f_vel_sym = simplify(f_vel_sym)
