@@ -1,5 +1,4 @@
 from math import nan
-
 import serial
 
 def openPort(port_name="COM3", baud_rate=921600):
@@ -27,3 +26,9 @@ def readState(port):
         return tuple(values)  # device time, encoder position, encoder velocity, stepper position
     except:
         return tuple([nan, nan, nan, nan])
+
+def printState(t, enc_pos, enc_vel, vc, stepper_pos):
+    print(
+        f"t: {t:.3f}\tPe: {enc_pos:.3f}\tVe: {enc_vel:.3f}\tVsc: {vc:.3f}\tPs: {stepper_pos:.3f}"
+    )
+
